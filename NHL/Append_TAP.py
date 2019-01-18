@@ -12,7 +12,7 @@ from datetime import datetime
 import numpy as np
 
 # Location to read and write files for this TAP application
-RootDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')) + '/TAP_OUT_4'
+RootDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')) + '/TAP_OUT_FinalTestn3'
 print 'RootDir' + RootDir
 if not os.path.exists(RootDir):
     os.makedirs(RootDir)
@@ -22,8 +22,8 @@ Data_Dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')) + 
 if not os.path.exists(Data_Dir):
     raise Exception("RootDir: %s Doesn't exist"%Data_Dir)
 
-BuildStartTimes = True
-RunPyGnome = True
+BuildStartTimes = False
+RunPyGnome = False
 BuildCubes = True
 BuildSite = True
 BuildViewer = True
@@ -38,7 +38,7 @@ print "\nAnalyzing User Inputs"
 # Todo: add start site
 Locations=np.loadtxt(os.path.join(Data_Dir,"TestLocations.csv"), delimiter=",")
 #nstarts= range(len(Locations))
-nstarts= [15]
+nstarts= [15,22]
 StartSites = []
 for i in nstarts:
     StartSites.append('{},{}'.format(Locations[i,0],Locations[i,1]))
@@ -52,7 +52,7 @@ for i in nstarts:
 #               '-124.90,46.64', '-125.35,46.43', '-125.80,46.22', '-126.25,46.01',
 #               '-125.70,43.70', '-127.00,43.70'] #30 start locations
 # Todo: figure out number of LE's
-NumLEs = 7*12 # number of Lagrangian elements you want in the GNOME run
+NumLEs = 100 # number of Lagrangian elements you want in the GNOME run
 ReleaseLength = 0 # Length of release in hours (0 for instantaneous)
 
 # time span of your data set
@@ -67,9 +67,9 @@ Seasons = [
             ['Year',  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ]]
 
           ]
-NumStarts = 2 # number of start times you want in each season:
+NumStarts = 3 # number of start times you want in each season:
 
-days = [0.5,0.25, 1, 2, 3, 4, 5, 6 , 7] # 7 days max. Added 0.5 day due to (1 getijde de tijd)
+days = [0.25, 0.5, 1, 2, 3]#, 4, 5] # 7 days max. Added 0.5 day due to (1 getijde de tijd)
 
 # Inputs needed for PyGnome
 MapFileName = "MATROOS_BASED.bna"
@@ -107,7 +107,7 @@ refloat = -1 # doesn't do anything but the modules want it
 windage_range = (0.03,0.03)
 windage_persist = -1
 diffusion_coef = 5000
-model_timestep = 30 # timestep in seconds
+model_timestep = 60 # timestep in seconds
 
 ##############################################################
 ###### Additional Calculations (and less common inputs) ######
@@ -121,7 +121,7 @@ TrajectoryRunLength = 24 * max(days)
 TrajectoriesPath = 'Trajectories_n' + str(NumLEs) # relative to RootDir
 MapName = Project + ' TAP'
 CubesPath = 'Cubes_n' + str(NumLEs)
-CubesRootNames = ['Arc_' for i in StartTimeFiles] # built to match the start time files
+CubesRootNames = ['Wad_' for i in StartTimeFiles] # built to match the start time files
 
 # Can be used to filter out some start sites and start times
 # These variables function as an index map
@@ -169,8 +169,8 @@ Grid.num_long = int(np.ceil(np.abs(Grid.max_long - Grid.min_long)/Grid.dlong) + 
 # viewer for instantaneous releases (see OilWeathering.py)
 # Todo: choose spill sizes and LOC's
 OilWeatheringType = None
-PresetLOCS = ['1.5 barrels','11.22 barrels', '184 barrels'] #[minsheen, maxsheen,maxrainbow] ['5 barrels', '10 barrels', '20 barrels']
-PresetSpillAmounts = ['250 barrels', '83.8 barrels' , '8.38 barrels'] # ['30 metric tons', '10 metric tons', '1 metric tons'] ['1000 barrels', '100 barrels']
+PresetLOCS = ['0.04 cubicmeters','0.34 cubicmeters', '5.60 cubicmeters'] #[minsheen, maxsheen,maxrainbow]
+PresetSpillAmounts = ['30 cubicmeters', '10 cubicmeters' , '1 cubicmeters'] # [ ]
 
 ## TAP Viewer Data (for SITE.TXT file)
 TAPViewerSource = os.path.join(os.path.dirname(RootDir),'GnomeTools/amyTAP') # where the TAP view, etc lives.
@@ -203,11 +203,11 @@ if BuildCubes and __name__ == '__main__':
 if BuildSite and __name__ == '__main__':
     print "\n---Building Sites---"
     import BuildSite
-    BuildSite.main(RootDir, MapName, MapFileName, MapFileType, NumStarts, Seasons,
+    BuildSite.main(RootDir, MapName, MapFileName, CubesRootNames, MapFileType, NumStarts, Seasons,
                    StartSites, OutputTimes, OutputUserStrings, PresetLOCS,
                    PresetSpillAmounts, ReceptorType, Grid)
 
 if BuildViewer and __name__ == '__main__':
     print "\n---Building Viewer---"
     import BuildViewer
-    BuildViewer.main(RootDir, TAPViewerPath, TAPViewerSource, MapFileName, CubesPath, Seasons, Data_Dir)
+    BuildViewer.main(RootDir, TAPViewerPath, TAPViewerSource, StartTimeFiles, MapFileName, CubesPath, Seasons, Data_Dir)

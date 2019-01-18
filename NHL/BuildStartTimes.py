@@ -208,5 +208,5 @@ class SimpleGapSet(GapSet):
         
 if __name__ == '__main__':
     import Setup_TAP as tap
-    main(tap.RootDir, tap.DataStartEnd, tap.DataGaps, tap.Seasons, tap.NumStarts,
+    main(tap.RootDir, tap.DataStartEnd, tap.DataGaps, tap.Seasons[:], tap.NumStarts,
          tap.TrajectoryRunLength, tap.TimeSeries)

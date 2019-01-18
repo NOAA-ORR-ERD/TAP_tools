@@ -8,7 +8,7 @@ This has not been well set up to work universally. It's only been tested on one 
 """
 import os, shutil
 
-def main(RootDir, TAPViewerPath, TAPViewerSource, MapFileName, CubesPath, Seasons, Data_Dir):
+def main(RootDir, TAPViewerPath, TAPViewerSource, StartTimeFiles, MapFileName, CubesPath, Seasons, Data_Dir):
 
     TAPViewerDir = os.path.join(RootDir, TAPViewerPath)
 
@@ -36,9 +36,9 @@ def main(RootDir, TAPViewerPath, TAPViewerSource, MapFileName, CubesPath, Season
     shutil.copy(os.path.join(Data_Dir ,MapFileName), TAPDATADir)
 
     # copy the start times file (not required, but it's good to have it there
-    # print StartTimeFiles
-    # for (filename, _) in StartTimeFiles:
-    #     shutil.copy(filename, TAPDATADir)
+    print StartTimeFiles
+    for (filename, _) in StartTimeFiles:
+        shutil.copy(filename, TAPDATADir)
 
     FullCubesPath = os.path.join(RootDir, CubesPath)
 
@@ -58,4 +58,4 @@ def main(RootDir, TAPViewerPath, TAPViewerSource, MapFileName, CubesPath, Season
 
 if __name__ == '__main__':
     import Setup_TAP as tap
-    maint(tap.RootDir, tap.TAPViewerPath, tap.TAPViewerSource, tap.MapFileName, tap.CubesPath, tap.Seasons, tap.Data_Dir)
+    maint(tap.RootDir, tap.TAPViewerPath, tap.TAPViewerSource, tap.StartTimeFiles, tap.MapFileName, tap.CubesPath, tap.Seasons, tap.Data_Dir)

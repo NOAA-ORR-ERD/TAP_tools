@@ -1,7 +1,8 @@
 """
-TAP Setup.py
+Setup_TAP.py
 
 Master set up script for a TAP run
+In this version, the script performs the runs per location
 
 All the data required to set up and build TAP cubes + site.txt file should be in here
 
@@ -10,9 +11,11 @@ All the data required to set up and build TAP cubes + site.txt file should be in
 import os
 from datetime import datetime
 import numpy as np
+import time
+import shutil
 
 # Location to read and write files for this TAP application
-RootDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')) + '/TAP_OUT_FinalTest'
+RootDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')) + '/TAP_OUT_ser2'
 print 'RootDir' + RootDir
 if not os.path.exists(RootDir):
     os.makedirs(RootDir)
@@ -27,6 +30,8 @@ RunPyGnome = True
 BuildCubes = True
 BuildSite = True
 BuildViewer = True
+PerSite = True
+CleanDiskPolicy = True
 
 ###################################
 ###### **** User Inputs **** ######
@@ -34,11 +39,9 @@ BuildViewer = True
 print "\nAnalyzing User Inputs"
 
 # Spill information
-#StartSites = ['-125.7, 48.2', '-125.15, 47.8', '-125.2, 48.2', '-125, 47.1']
-# Todo: add start site
 Locations=np.loadtxt(os.path.join(Data_Dir,"TestLocations.csv"), delimiter=",")
 #nstarts= range(len(Locations))
-nstarts= [9,15,22]
+nstarts=[15,22,9] #range(0,len(Locations)) #
 StartSites = []
 for i in nstarts:
     StartSites.append('{},{}'.format(Locations[i,0],Locations[i,1]))
@@ -51,8 +54,7 @@ for i in nstarts:
 #               '-127.38,46.02', '-127.83,45.81', '-128.28,45.60', '-124.45,46.85',
 #               '-124.90,46.64', '-125.35,46.43', '-125.80,46.22', '-126.25,46.01',
 #               '-125.70,43.70', '-127.00,43.70'] #30 start locations
-# Todo: figure out number of LE's
-NumLEs = 7*24 # number of Lagrangian elements you want in the GNOME run
+NumLEs = 10 # number of Lagrangian elements you want in the GNOME run
 ReleaseLength = 0 # Length of release in hours (0 for instantaneous)
 
 # time span of your data set
@@ -64,12 +66,12 @@ DataGaps = ( )
 #    name is a string for the season name  
 #    months is a tuple of integers indicating which months are in that season
 Seasons = [
-            ['Year',  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ]]
-
+            ['Year', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]],
           ]
-NumStarts = 4 # number of start times you want in each season:
 
-days = [0.5,0.25, 1, 2, 3, 4, 5, 6 , 7] # 7 days max. Added 0.5 day due to (1 getijde de tijd)
+NumStarts = 2 # number of start times you want in each season:
+
+days = [0.25, 0.5, 1]#, 2, 3, 4, 5] # 7 days max. Added 0.5 day due to (1 getijde de tijd)
 
 # Inputs needed for PyGnome
 MapFileName = "MATROOS_BASED.bna"
@@ -102,12 +104,11 @@ wind_files = [ os.path.join(Data_Dir,"Wind_2014.nc")]
 #               os.path.join(Data_Dir,"CFSRWind_0.5deg_10m_2010_Pacific.nc")
 #              ]
 
-# Todo: add refloats
 refloat = -1 # doesn't do anything but the modules want it
 windage_range = (0.03,0.03)
 windage_persist = -1
 diffusion_coef = 5000
-model_timestep = 30 # timestep in seconds
+model_timestep = 3600 # timestep in seconds
 
 ##############################################################
 ###### Additional Calculations (and less common inputs) ######
@@ -115,7 +116,7 @@ model_timestep = 30 # timestep in seconds
 Project = os.path.basename(RootDir)
 StartTimeFiles = [(os.path.join(RootDir, s[0]+'Starts.txt'), s[0]) for s in Seasons]
 OutputTimes = [24*i for i in days] # output times in hours (calculated from days)
-OutputUserStrings = ['%d days'%i for i in days]
+OutputUserStrings = ['%s days'%i for i in days]
 OutputTimestep = 0.25 #hours
 TrajectoryRunLength = 24 * max(days)
 TrajectoriesPath = 'Trajectories_n' + str(NumLEs) # relative to RootDir
@@ -167,7 +168,6 @@ Grid.num_long = int(np.ceil(np.abs(Grid.max_long - Grid.min_long)/Grid.dlong) + 
 
 # use None for no weathering -- weathering can be post-processed by the TAP
 # viewer for instantaneous releases (see OilWeathering.py)
-# Todo: choose spill sizes and LOC's
 OilWeatheringType = None
 PresetLOCS = ['0.04 cubicmeters','0.34 cubicmeters', '5.60 cubicmeters'] #[minsheen, maxsheen,maxrainbow]
 PresetSpillAmounts = ['30 cubicmeters', '10 cubicmeters' , '1 cubicmeters'] # [ ]
@@ -183,22 +183,56 @@ TAPViewerPath = Project + "_TapView_" + str(NumLEs)
 if BuildStartTimes and __name__ == '__main__':
     print "\n---Building Start Times---"
     import BuildStartTimes
-    BuildStartTimes.main(RootDir, DataStartEnd, DataGaps, Seasons, NumStarts, TrajectoryRunLength, TimeSeries)
+    BuildStartTimes.main(RootDir, DataStartEnd, DataGaps, Seasons[:], NumStarts, TrajectoryRunLength, TimeSeries)
+# Fixme: BuildStartTimes breaks Seasons
 
-if RunPyGnome and __name__ == '__main__':
-    print "\n---Running PyGnome---"
-    import RunPyGnome
-    RunPyGnome.main(RootDir, Data_Dir, StartSites, RunSites, NumStarts, RunStarts,
-                    ReleaseLength, TrajectoryRunLength,
-                    StartTimeFiles,  TrajectoriesPath, 
-                    NumLEs, MapFileName, refloat, current_files, wind_files, diffusion_coef,
-                    model_timestep, windage_range, windage_persist, OutputTimestep)
+if PerSite:
+    for i, StartSite in enumerate(StartSites):
+        if RunPyGnome and __name__ == '__main__':
+            print "\n---Running PyGnome---"
+            import RunPyGnomeSite
+            RunPyGnomeSite.main(RootDir, Data_Dir, StartSite, RunSites[i], NumStarts, RunStarts,
+                            ReleaseLength, TrajectoryRunLength,
+                            StartTimeFiles,  TrajectoriesPath,
+                            NumLEs, MapFileName, refloat, current_files, wind_files, diffusion_coef,
+                            model_timestep, windage_range, windage_persist, OutputTimestep)
 
-if BuildCubes and __name__ == '__main__':
-    print "\n---Building Cubes---"
-    import BuildCubes
-    BuildCubes.main(RootDir, CubesPath, CubesRootNames, CubeType, CubeDataType, Seasons,
-                    TrajectoriesPath, ReceptorType, Grid, OilWeatheringType, OutputTimes, NumLEs)
+        if BuildCubes and __name__ == '__main__':
+            print "\n---Building Cube---"
+            import BuildCubesSite
+            BuildCubesSite.main(RunSites[i], RootDir, CubesPath, CubesRootNames, CubeType, CubeDataType, Seasons,
+                            TrajectoriesPath, ReceptorType, Grid, OilWeatheringType, OutputTimes, NumLEs, NumStarts)
+
+        if CleanDiskPolicy:
+            print('Removing trajectory files')
+            d = 'pos_%03i' % (RunSites[i] + 1)
+            for s in range(len(Seasons)):
+                seasondir=Seasons[s][0]
+                TrajDir = os.path.join(RootDir, TrajectoriesPath, seasondir, d)
+                try:
+                    shutil.rmtree(TrajDir)
+                except:
+                    'system not ready yet'
+                    time.sleep(10)
+                    shutil.rmtree(TrajDir)
+
+else:
+    if RunPyGnome and __name__ == '__main__':
+        print "\n---Running PyGnome---"
+        import RunPyGnome
+
+        RunPyGnome.main(RootDir, Data_Dir, StartSite, RunSites, NumStarts, RunStarts,
+                        ReleaseLength, TrajectoryRunLength,
+                        StartTimeFiles, TrajectoriesPath,
+                        NumLEs, MapFileName, refloat, current_files, wind_files, diffusion_coef,
+                        model_timestep, windage_range, windage_persist, OutputTimestep)
+
+    if BuildCubes and __name__ == '__main__':
+        print "\n---Building Cubes---"
+        import BuildCubes
+
+        BuildCubes.main(RootDir, CubesPath, CubesRootNames, CubeType, CubeDataType, Seasons,
+                        TrajectoriesPath, ReceptorType, Grid, OilWeatheringType, OutputTimes, NumLEs)
 
 if BuildSite and __name__ == '__main__':
     print "\n---Building Sites---"
@@ -210,4 +244,4 @@ if BuildSite and __name__ == '__main__':
 if BuildViewer and __name__ == '__main__':
     print "\n---Building Viewer---"
     import BuildViewer
-    BuildViewer.main(RootDir, TAPViewerPath, TAPViewerSource, MapFileName, CubesPath, Seasons, Data_Dir)
+    BuildViewer.main(RootDir, TAPViewerPath, TAPViewerSource, StartTimeFiles, MapFileName, CubesPath, Seasons, Data_Dir)
