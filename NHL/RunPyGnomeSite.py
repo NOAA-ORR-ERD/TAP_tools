@@ -46,7 +46,7 @@ def main(RootDir, Data_Dir, StartSite, RunSite, NumStarts, RunStarts, ReleaseLen
         timer1 = datetime.now()
         
         SeasonName = Season[1]
-        start_times = open(Season[0],'r').readlines()[:NumStarts]
+        start_times = open(Season[0], 'r').readlines()[:NumStarts]
         SeasonTrajDir = os.path.join(RootDir,TrajectoriesPath,SeasonName)
         if not os.path.isdir(SeasonTrajDir):
             print "Creating directory: ", SeasonTrajDir

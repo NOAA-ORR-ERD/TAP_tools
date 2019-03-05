@@ -15,7 +15,7 @@ import time
 import shutil
 
 # Location to read and write files for this TAP application
-RootDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')) + '/TAP_OUT_ser2'
+RootDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')) + '/TAP_OUT_mf_append_num2'
 print 'RootDir' + RootDir
 if not os.path.exists(RootDir):
     os.makedirs(RootDir)
@@ -28,10 +28,11 @@ if not os.path.exists(Data_Dir):
 BuildStartTimes = True
 RunPyGnome = True
 BuildCubes = True
+BuildMudFlatCubes = True  # Builds a second set of cubes only considering oil that has beached (on mudflats)
 BuildSite = True
 BuildViewer = True
-PerSite = True
-CleanDiskPolicy = True
+PerSite = True  # Will perform Pygnomerun & BuildCubes per location. Helpful in combination with CleanDiskPolicy
+CleanDiskPolicy = True  # removes (large) trajectory files after building the cubes
 
 ###################################
 ###### **** User Inputs **** ######
@@ -41,7 +42,7 @@ print "\nAnalyzing User Inputs"
 # Spill information
 Locations=np.loadtxt(os.path.join(Data_Dir,"TestLocations.csv"), delimiter=",")
 #nstarts= range(len(Locations))
-nstarts=[15,22,9] #range(0,len(Locations)) #
+nstarts= range(0,1) # range(0,len(Locations)) #[15,9] #
 StartSites = []
 for i in nstarts:
     StartSites.append('{},{}'.format(Locations[i,0],Locations[i,1]))
@@ -54,8 +55,8 @@ for i in nstarts:
 #               '-127.38,46.02', '-127.83,45.81', '-128.28,45.60', '-124.45,46.85',
 #               '-124.90,46.64', '-125.35,46.43', '-125.80,46.22', '-126.25,46.01',
 #               '-125.70,43.70', '-127.00,43.70'] #30 start locations
-NumLEs = 10 # number of Lagrangian elements you want in the GNOME run
-ReleaseLength = 0 # Length of release in hours (0 for instantaneous)
+NumLEs = 100 # number of Lagrangian elements you want in the GNOME run
+ReleaseLength = 1 # Length of release in hours (0 for instantaneous)
 
 # time span of your data set
 DataStartEnd = (datetime(2014, 10, 1, 1), datetime(2014, 10, 30, 23))
@@ -69,9 +70,9 @@ Seasons = [
             ['Year', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]],
           ]
 
-NumStarts = 2 # number of start times you want in each season:
+NumStarts = 3 # number of start times you want in each season:
 
-days = [0.25, 0.5, 1]#, 2, 3, 4, 5] # 7 days max. Added 0.5 day due to (1 getijde de tijd)
+days = [0.25, 0.5, 1, 2, 3, 4, 5] # 7 days max. Added 0.5 day due to (1 getijde de tijd)
 
 # Inputs needed for PyGnome
 MapFileName = "MATROOS_BASED.bna"
@@ -160,7 +161,7 @@ Grid.min_lat = 52.40 # decimal degrees
 Grid.max_lat = 53.80
 Grid.dlat = 0.02
 Grid.min_long = 4.00
-Grid.max_long = 7.30
+Grid.max_long = 7.24
 Grid.dlong = 0.03
 
 Grid.num_lat = int(np.ceil(np.abs(Grid.max_lat - Grid.min_lat)/Grid.dlat) + 1)
@@ -221,7 +222,7 @@ else:
         print "\n---Running PyGnome---"
         import RunPyGnome
 
-        RunPyGnome.main(RootDir, Data_Dir, StartSite, RunSites, NumStarts, RunStarts,
+        RunPyGnome.main(RootDir, Data_Dir, StartSites, RunSites, NumStarts, RunStarts,
                         ReleaseLength, TrajectoryRunLength,
                         StartTimeFiles, TrajectoriesPath,
                         NumLEs, MapFileName, refloat, current_files, wind_files, diffusion_coef,
@@ -245,3 +246,10 @@ if BuildViewer and __name__ == '__main__':
     print "\n---Building Viewer---"
     import BuildViewer
     BuildViewer.main(RootDir, TAPViewerPath, TAPViewerSource, StartTimeFiles, MapFileName, CubesPath, Seasons, Data_Dir)
+
+if BuildViewer and BuildMudFlatCubes and __name__ == '__main__':
+    print "\n---Building Viewer---"
+    import BuildViewer
+    TAPViewerPath_mf = TAPViewerPath + '_mf'
+    CubesPath_mf = CubesPath + '_mf'
+    BuildViewer.main(RootDir, TAPViewerPath_mf, TAPViewerSource, StartTimeFiles, MapFileName, CubesPath_mf, Seasons, Data_Dir)

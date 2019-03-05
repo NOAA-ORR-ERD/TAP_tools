@@ -20,10 +20,8 @@ except IndexError:
     raise Exception("You must pass in the RootDir on the command line")
 
 if not os.path.exists(RootDir):
-    raise Exception("RootDir: %s Doesn't exist"%RootDir)
-
+    raise Exception("RootDir: %s Doesn't exist" % RootDir)
 
 sys.path.insert(0, RootDir)
 setup = __import__('Setup_TAP')
 setup.RootDir = RootDir
-
